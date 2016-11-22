@@ -33,12 +33,18 @@ data/England_lad_2011_clipped.zip:
 data/lad/england_lad_2011_clipped.shp: data/England_lad_2011_clipped.zip
 	unzip -d data/lad data/England_lad_2011_clipped.zip
 
+# Extract Local Authority Districts, Unitary Authorities and Boroughs geography
+data/lad/england_lad_2011_clipped_norfolk.shp: data/lad/England_lad_2011_clipped.shp
+	ogr2ogr -f "ESRI Shapefile" \
+	-where "label in ('E07000143', 'E07000144', 'E07000145', 'E07000146', 'E07000147', 'E07000148', 'E07000149')" \
+	data/lad/england_lad_2011_clipped_norfolk.shp data/lad/england_lad_2011_clipped.shp
+
 # Dissolve and buffer a Norfolk outline from a few LADs (selected by ID)
 data/norfolk-outline.shp: data/lad/england_lad_2011_clipped.shp
 	ogr2ogr -f "ESRI Shapefile" \
 	data/norfolk-outline.shp data/lad/england_lad_2011_clipped.shp \
 	-dialect sqlite \
-	-sql "select ST_union(ST_buffer(Geometry,200)) from england_lad_2011_clipped WHERE label in ('E07000143', 'E07000144', 'E07000145', 'E07000146', 'E07000147', 'E07000148', 'E07000149', 'E07000206')"
+	-sql "select ST_union(ST_buffer(Geometry,200)) from england_lad_2011_clipped WHERE label in ('E07000143', 'E07000144', 'E07000145', 'E07000146', 'E07000147', 'E07000148', 'E07000149')"
 
 # Download Output Area geography
 data/England_oa_2011_clipped.zip:
