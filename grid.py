@@ -18,10 +18,10 @@ with fiona.drivers():
 
     # Create a sink file to write out features
     with fiona.open(
-            'data/grid.shp', 'w',
-            crs=from_epsg(CRS_EPSG_CODE),
-            driver="ESRI Shapefile",
-            schema=sink_schema) as sink:
+        'data/grid.shp', 'w',
+        crs=from_epsg(CRS_EPSG_CODE),
+        driver="ESRI Shapefile",
+        schema=sink_schema) as sink:
 
         current_x = GRID_BBOX[0]
 
