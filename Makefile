@@ -65,3 +65,26 @@ data/liverpool_england.imposm-shapefiles.zip:
 # Extract Liverpool OSM metro extract
 data/osm/liverpool_england_osm_buildings.shp: data/liverpool_england.imposm-shapefiles.zip
 	unzip -d data/osm data/liverpool_england.imposm-shapefiles.zip
+
+# generate grid
+data/grid.shp:
+	python grid.py
+
+# output grid with pop
+data/grid_with_pop.shp: data/grid.shp data/oa/england_oa_2011_clipped_with_pop.shp
+	python aggregate.py \
+		-i  data/oa/england_oa_2011_clipped_with_pop.shp \
+		-o  data/grid_with_pop.shp \
+		-rg data/grid.shp \
+		-ri 0 -ra pop -rt int
+
+# output LADs with pop
+data/lad/england_lad_2011_clipped_norfolk_with_pop.shp: data/lad/england_lad_2011_clipped_norfolk.shp data/oa/england_oa_2011_clipped_with_pop.shp
+	python aggregate.py \
+		-i  data/oa/england_oa_2011_clipped_with_pop.shp \
+		-o  data/lad/england_lad_2011_clipped_norfolk_with_pop.shp.shp \
+		-rg data/lad/england_lad_2011_clipped_norfolk.shp \
+		-ri 0 -ra pop -rt int
+
+.PHONY: all
+all: data/lad/england_lad_2011_clipped_norfolk_with_pop.shp data/grid_with_pop.shp
