@@ -11,43 +11,45 @@ def proportion_of_a_intersecting_b(a, b):
 
 ShapeWithValue = namedtuple('ShapeWithValue', ['shape', 'value'])
 
-def aggregate(input_file, output_file, reporting_geometry, reporting_initial_value, reporting_attribute, reporting_attribute_type):
-    input_features = []
+def concentrate(input_file, output_file, reporting_geometry, reporting_initial_value, reporting_attribute, reporting_attribute_type):
+    reporting_features = []
     idx = index.Index()
 
     with fiona.drivers():
-        with fiona.open(input_file) as input_src:
-            for feature in input_src:
+        with fiona.open(reporting_geometry) as reporting_src:
+            sink_schema = reporting_src.schema.copy()
+            reporting_crs = reporting_src.crs
+
+            for feature in reporting_src:
                 s = ShapeWithValue(
                     shape=shape(feature['geometry']),
                     value=feature['properties'][reporting_attribute]
                 )
-                input_features.append(s)
+                reporting_features.append(s)
 
         # Populate R-tree index with bounds of input features
-        for pos, feature in enumerate(input_features):
+        for pos, feature in enumerate(reporting_features):
             idx.insert(pos, feature.shape.bounds)
 
-        with fiona.open(reporting_geometry) as reporting_src:
-            sink_schema = reporting_src.schema.copy()
+        with fiona.open(input_file) as input_src:
             sink_schema['properties'][reporting_attribute] = reporting_attribute_type
 
             with fiona.open(
                 output_file, 'w',
-                crs=reporting_src.crs,
+                crs=reporting_crs,
                 driver="ESRI Shapefile",
                 schema=sink_schema) as reporting_sink:
 
-                for reporting_feature in reporting_src:
-                    reporting_shape = shape(reporting_feature['geometry'])
+                for input_feature in input_src:
+                    input_shape = shape(input_feature['geometry'])
                     reporting_value = reporting_initial_value
 
                     # look up bbox intersecting features in R-tree
-                    intersecting_features = [input_features[pos] for pos in idx.intersection(reporting_shape.bounds)]
+                    intersecting_features = [reporting_features[pos] for pos in idx.intersection(input_shape.bounds)]
 
-                    for input_feature in intersecting_features:
-                        # find proportion of input feature that intersects
-                        proportion = proportion_of_a_intersecting_b(input_feature.shape, reporting_shape)
+                    for reporting_feature in intersecting_features:
+                        # find proportion of reporting_feature that intersects
+                        proportion = proportion_of_a_intersecting_b(reporting_feature.shape, input_shape)
                         # add that proportion of the attribute_to_report to the reporting_value
                         reporting_value = reporting_value + proportion * input_feature.value
 
@@ -100,13 +102,13 @@ if __name__ == '__main__':
 
     """Example usage:
 
-    python aggregate.py \
+    python concentrate.py \
       -i  data/oa/england_oa_2011_clipped_with_pop.shp \
-      -o  data/grid_with_pop.shp \
-      -rg data/grid.shp \
+      -o  data/osm/norfolk_buildings_with_pop.shp \
+      -rg data/osm/norfolk_buildings.shp \
       -ri 0 -ra pop -rt int
     """
-    aggregate(
+    concentrate(
         args.input_file,
         args.output_file,
         args.reporting_geometry,
